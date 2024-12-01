@@ -1,0 +1,16 @@
+{
+  "name": "satisfactory-monitor",
+  "version": "1.0.0",
+  "description": "Monitors a Docker-based Satisfactory dedicated server and restarts it if updates are available",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Dan Cowell <admin@dfcowell.net>",
+  "license": "MIT",
+  "dependencies": {
+    "docker-compose": "^1.1.0",
+    "dotenv": "^16.4.5",
+    "yaml": "^2.6.1"
+  }
+}
