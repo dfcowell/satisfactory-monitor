@@ -1,0 +1,40 @@
+name: satisfactory
+
+services:
+  server:
+    image: 'wolveix/satisfactory-server:latest'
+    hostname: satisfactory-server
+    ports:
+      - '7777:7777/udp'
+      - '7777:7777/tcp'
+    environment:
+      - MAXPLAYERS=4
+      - PGID=100
+      - PUID=2001
+      - ROOTLESS=false
+      - STEAMBETA=false
+    restart: unless-stopped
+    networks:
+      - private-satisfactory
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+        reservations:
+          memory: 4G
+  
+  monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      
+    container_name: 'satisfactory-monitor'
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock'
+      - ./docker-compose.yml:/app/docker-compose.yml
+    restart: always
+    command: index.js
+    networks:
+      - private-satisfactory
+networks:
+  private-satisfactory:
