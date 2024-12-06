@@ -5,6 +5,10 @@ const servicesToUpdate = (process.env.UPDATE_SERVICES || '').split(',');
 const serverService = process.env.SERVER_SERVICE || 'server';
 const steamappsPath = process.env.STEAMAPPS_PATH || '/config/gamefiles/steamapps';
 
+const composeOptions = {
+  config: process.env.DOCKER_COMPOSE_FILE || 'docker-compose.yml',
+  cwd: process.env.DOCKER_COMPOSE_PATH || '.'
+};
 const composeUpOptions = {commandOptions: ['--force-recreate']};
 const serverAppId = process.env.SERVER_APP_ID || '1690800';
 
@@ -25,16 +29,16 @@ setGlobalDispatcher(agent);
 
 const updateMany = async (services) => {
   console.log(`Updating & restarting services: ${services.join(', ')}`);
-  await compose.pullMany(services);
+  await compose.pullMany(services, composeOptions);
 
-  return compose.upMany(services, composeUpOptions);
+  return compose.upMany(services, {...composeOptions, ...composeUpOptions });
 };
 
 const updateAll = async () => {
   console.log('Updating & restarting all services');
   await compose.pullAll();
 
-  return compose.upAll(composeUpOptions);
+  return compose.upAll({...composeOptions, ...composeUpOptions });
 };
 
 const update = async () => {
@@ -44,13 +48,13 @@ const update = async () => {
 const restartMany = async (services) => {
   console.log(`Restarting services: ${services.join(', ')}`);
 
-  return compose.upMany(services, composeUpOptions);
+  return compose.restartMany(services, composeOptions);
 }
 
 const restartAll = async () => {
   console.log('Restarting all services');
 
-  return compose.upAll(composeUpOptions);
+  return compose.restartAll(composeOptions);
 }
 
 const restart = async () => {
