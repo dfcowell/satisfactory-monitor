@@ -192,6 +192,9 @@ const wait = async (ms) => new Promise(r => {
 process.on('SIGINT', () => {
   run = false;
   clearTimeout(timeout);
+  if (restartTimeout) {
+    clearTimeout(restartTimeout);
+  }
   resolve();
 });
 
