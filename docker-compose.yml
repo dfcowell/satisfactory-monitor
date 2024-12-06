@@ -1,7 +1,8 @@
 name: satisfactory
 
 services:
-  server:
+  satisfactory-server:
+    container_name: 'satisfactory-server'
     image: 'wolveix/satisfactory-server:latest'
     hostname: satisfactory-server
     ports:
@@ -23,14 +24,19 @@ services:
         reservations:
           memory: 4G
   
-  monitor:
+  satisfactory-monitor:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: 'satisfactory-monitor'
     environment:
       - RESTART_SCHEDULE=4:30
+      - MANAGE_SERVICES=satisfactory-server
       - DOCKER_COMPOSE_PATH=${PWD}
+      # PWD is not set in the container by default. We need to pass it in
+      # from the host so that it's available when Compose processes the
+      # docker-compose.yml file when restarting or updating services.
+      - PWD=${PWD}
     volumes:
       - '/var/run/docker.sock:/var/run/docker.sock'
       - ${PWD}:${PWD}

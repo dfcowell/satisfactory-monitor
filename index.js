@@ -40,7 +40,7 @@ var compose = require('docker-compose');
  * - CHECK_INTERVAL:      The interval in milliseconds to wait between health checks. Defaults
  *                        to 30 minutes.
  */
-const serverUrl = process.env.SERVER_URL || 'satisfactory-server:7777';
+const serverUrl = process.env.SERVER_URL || 'https://satisfactory-server:7777';
 const servicesToUpdate = (process.env.MANAGE_SERVICES || '').split(',');
 const serverService = process.env.SERVER_SERVICE || 'server';
 const steamappsPath = process.env.STEAMAPPS_PATH || '/config/gamefiles/steamapps';
