@@ -199,6 +199,10 @@ process.on('SIGINT', () => {
 });
 
 (async () => {
+  console.log('Monitor started, waiting for 5 minutes before starting checks');
+
+  await wait(1000 * 60 * 5);
+  
   while (run) {
     try {
       const healthy = await healthCheck();
