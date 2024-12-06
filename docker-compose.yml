@@ -30,9 +30,10 @@ services:
     container_name: 'satisfactory-monitor'
     environment:
       - RESTART_SCHEDULE=4:30
+      - DOCKER_COMPOSE_PATH=${PWD}
     volumes:
       - '/var/run/docker.sock:/var/run/docker.sock'
-      - ./docker-compose.yml:/app/docker-compose.yml
+      - ${PWD}:${PWD}
     restart: always
     command: index.js
     networks:

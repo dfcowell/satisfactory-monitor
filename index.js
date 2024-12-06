@@ -1,7 +1,47 @@
 require('dotenv').config();
 var compose = require('docker-compose');
 
-const servicesToUpdate = (process.env.UPDATE_SERVICES || '').split(',');
+/*
+ * Configuration
+ *
+ * The monitor is configured using environment variables. Where possible, sensible
+ * defaults are provided. These defaults are designed to work together with the
+ * wolveix/satisfactory-server Docker image. Other Satisfactory server images may
+ * require different configuration.
+ *
+ * The following environment variables can be set to configure the monitor:
+ * - SERVER_URL:          The URL of the server to check health, including protocol and
+ *                        port. Defaults to 'satisfactory-server:7777'.
+ * - MANAGE_SERVICES:     A comma-separated list of services to update or restart
+ *                        when the game is out of date or the connection is unhealthy.
+ *                        If not set, all services will be updated/restarted, including
+ *                        this monitor service.
+ * - SERVER_SERVICE:      The name of the service running the game server. Defaults to
+ *                        'server'.
+ * - STEAMAPPS_PATH:      The path to the SteamApps directory in the server container.
+ *                        Defaults to '/config/gamefiles/steamapps'.
+ * - DOCKER_COMPOSE_FILE: The name of the Docker Compose file to use. Defaults to
+ *                        'docker-compose.yml'.
+ * - DOCKER_COMPOSE_PATH: The path to the Docker Compose file. Your Compose file **must** be
+ *                        mounted in the monitor container at the same absolute path as it is
+ *                        on the host in order for volume mounts to be resolved correctly when
+ *                        updating or restarting services.
+ * - SERVER_APP_ID:       The Steam App ID of the game server. Defaults to '1690800'.
+ * - HEADER_HOST:         The value of the Host header to send with the health check
+ *                        request. If not set, the Host header will not be sent. This
+ *                        is useful for reverse proxies that require the Host header to
+ *                        be set, and can be used if you do not have public DNS records
+ *                        for your server.
+ * - RESTART_SCHEDULE:    A time in HH:MM format to schedule a daily restart of the
+ *                        server. If not set, the server will not be restarted unless it
+ *                        is unhealthy or out of date.
+ * - RESTART_INTERVAL:    The interval in milliseconds to wait after restarting the server
+ *                        before checking health again. Defaults to 5 minutes.
+ * - CHECK_INTERVAL:      The interval in milliseconds to wait between health checks. Defaults
+ *                        to 30 minutes.
+ */
+const serverUrl = process.env.SERVER_URL || 'satisfactory-server:7777';
+const servicesToUpdate = (process.env.MANAGE_SERVICES || '').split(',');
 const serverService = process.env.SERVER_SERVICE || 'server';
 const steamappsPath = process.env.STEAMAPPS_PATH || '/config/gamefiles/steamapps';
 
@@ -63,6 +103,15 @@ const restart = async () => {
 
 /*
  * Health check
+ * 
+ * Check if the server is healthy by sending a request to the
+ * server's health check endpoint.
+ * 
+ * If the server is slow, it will wait for two consecutive slow
+ * checks before considering the server unhealthy. If the server is
+ * reporting unhealthy, it will restart the system and wait for the
+ * restart interval before checking again. If the server is healthy,
+ * it will wait for the check interval before checking again.
  */
 
 let lastCheckSlow = false;
@@ -78,7 +127,7 @@ const healthCheck = async () => {
   }
 
   try {
-    const status = await fetch(`${process.env.SERVER_URL}/api/v1`, {
+    const status = await fetch(`${serverUrl}/api/v1`, {
       agent,
       headers,
       method: 'POST',
@@ -119,6 +168,9 @@ const healthCheck = async () => {
 
 /*
  * Update check
+ *
+ * Check if the server needs an update by comparing the latest build ID in
+ * the running container to the latest build ID from the SteamCmd API
  */
 
 const needsUpdate = async () => {
@@ -144,6 +196,9 @@ const needsUpdate = async () => {
 
 /*
  * Scheduled restart
+ *
+ * Set the RESTART_SCHEDULE environment variable to a time in HH:MM format
+ * to schedule a daily restart regardless of server health
  */
 
 let restartTimeout;
