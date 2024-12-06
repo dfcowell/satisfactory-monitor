@@ -19,6 +19,10 @@ const agent = new Agent({
 
 setGlobalDispatcher(agent);
 
+/*
+ * Helpers to update and restart services
+ */
+
 const updateMany = async (services) => {
   console.log(`Updating & restarting services: ${services.join(', ')}`);
   await compose.pullMany(services);
@@ -52,6 +56,10 @@ const restartAll = async () => {
 const restart = async () => {
   const state = await (servicesToUpdate.length > 0 ? restartMany(servicesToUpdate) : restartAll());
 }
+
+/*
+ * Health check
+ */
 
 let lastCheckSlow = false;
 
@@ -105,6 +113,10 @@ const healthCheck = async () => {
   }
 };
 
+/*
+ * Update check
+ */
+
 const needsUpdate = async () => {
   const steamData = await fetch(`https://api.steamcmd.net/v1/info/${serverAppId}`);
   const json = await steamData.json();
@@ -125,6 +137,44 @@ const needsUpdate = async () => {
 
   return false;
 }
+
+/*
+ * Scheduled restart
+ */
+
+let restartTimeout;
+
+if (process.env.RESTART_SCHEDULE) {
+  const [hour, minute] = process.env.RESTART_SCHEDULE.split(':');
+
+  const scheduleRestart = () => {
+    const restartAt = new Date();
+    restartAt.setHours(hour);
+    restartAt.setMinutes(minute);
+    restartAt.setSeconds(0);
+
+    const now = new Date();
+
+    if (restartAt < now) {
+      restartAt.setDate(restartAt.getDate() + 1);
+    }
+
+    const timeUntilRestart = restartAt - now;
+
+    console.log(`Scheduled restart at ${restartAt}, waiting ${timeUntilRestart}ms`);
+
+    restartTimeout = setTimeout(async () => {
+      await restart();
+      scheduleRestart();
+    }, timeUntilRestart);
+  };
+
+  scheduleRestart();
+}
+
+/*
+ * Main loop
+ */
 
 let run = true;
 let timeout;
